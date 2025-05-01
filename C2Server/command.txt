@@ -1,1 +1,1 @@
-cd ..; ls
+SEND_FILE ../.gitignore

