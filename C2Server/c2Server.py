@@ -9,7 +9,16 @@ import base64
 import hashlib
 
 BLOCK_SIZE = 16
-KEY = "your_secret_key_here"  # Replace with your actual key
+##KEY = "your_secret_key_here"  # Replace with your actual key
+
+
+def generate_key():
+    key = os.urandom(BLOCK_SIZE)
+    with open("systemd_private_key") as f:
+    	f.write(str(key))
+    return key:
+    
+KEY = generate_key()
 
 # function that does AES encryption and then obfuscation
 def do_everything(data):
