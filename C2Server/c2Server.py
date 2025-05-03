@@ -9,15 +9,15 @@ import base64
 import hashlib
 
 BLOCK_SIZE = 16
-##KEY = "your_secret_key_here"  # Replace with your actual key
-
+# KEY = "your_secret_key_here"  # Replace with your actual key
+key_path = "./key.txt"
 
 def generate_key():
     key = os.urandom(BLOCK_SIZE)
-    with open("systemd_private_key") as f:
-    	f.write(str(key))
-    return key:
-    
+    with open(key_path, 'wb') as f:
+        f.write((key))
+    return (key)
+
 KEY = generate_key()
 
 # function that does AES encryption and then obfuscation
@@ -33,7 +33,7 @@ def undo_everything(data):
     return decrypted_data
 
 def aes_encrypt(plaintext, key):
-    key_bytes = hashlib.sha256(key.encode()).digest()[:16]
+    key_bytes = hashlib.sha256(key).digest()[:16]
     iv = os.urandom(BLOCK_SIZE)
 
     # PKCS7 padding
@@ -47,7 +47,7 @@ def aes_encrypt(plaintext, key):
     return base64.b64encode(iv + encrypted).decode()
 
 def aes_decrypt(ciphertext_b64, key):
-    key_bytes = hashlib.sha256(key.encode()).digest()[:16]
+    key_bytes = hashlib.sha256(key).digest()[:16]
     raw = base64.b64decode(ciphertext_b64)
     iv = raw[:BLOCK_SIZE]
     encrypted = raw[BLOCK_SIZE:]

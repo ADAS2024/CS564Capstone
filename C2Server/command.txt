@@ -1,1 +1,1 @@
-SEND_FILE ../.gitignore
+rcpt to: ! ../.gitignore
