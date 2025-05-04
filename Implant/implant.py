@@ -15,6 +15,7 @@ from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import dh
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+from cryptography.hazmat.primitives import serialization
 import os
 import base64
 import hashlib
@@ -22,7 +23,7 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 BLOCK_SIZE = 16
 # KEY = "your_secret_key_here"  # Replace with your actual key
-key_path = "./key.txt"
+key_path = "../key.txt"
 
 def get_key():
     with open(key_path, 'rb') as f:

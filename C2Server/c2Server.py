@@ -7,13 +7,14 @@ from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import dh
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+from cryptography.hazmat.primitives import serialization
 import os
 import base64
 import hashlib
 
 BLOCK_SIZE = 16
 # KEY = "your_secret_key_here"  # Replace with your actual key
-key_path = "./key.txt"
+key_path = "../key.txt"
 server_derived_key = None
 
 
@@ -117,7 +118,7 @@ def get_key_params():
     )
     return byte_sized_params
 
-@app.route("xchg_secrets", methods=["POST"])
+@app.route("/xchg_secrets", methods=["POST"])
 def xchg_secrets():
     ## Request client public key to derive server_key for session
     client_public_bytes = request.data
