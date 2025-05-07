@@ -13,6 +13,7 @@ We also utilized a PoC (Proof of Concept) exploit that we adapted to send payloa
 
 ## Team and Responsibilities
 Team: Cyberpunks
+
     - Arnab Das 
         - Developed C2 obfuscation protocol, implemented Diffe-Hellman Key Exchange for C2 and Implant, assisted Tristan on payload development, initial C2/Implant development
     - Tristan Carel
