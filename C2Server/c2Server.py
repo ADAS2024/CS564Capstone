@@ -14,8 +14,10 @@ import hashlib
 
 BLOCK_SIZE = 16
 # KEY = "your_secret_key_here"  # Replace with your actual key
+
 key_path = "../key.txt"
 server_derived_key = None
+
 
 
 def generate_params():
@@ -159,7 +161,9 @@ def upload():
             file_data = base64.b64decode(file_data)
 
             file_name = decrypted_data["file_name"]
+
             file_path = os.path.join("/home/kali/Desktop/receivedFiles/", file_name)
+
             try:
                 with open(file_path, "wb") as f:
                     f.write(file_data)
