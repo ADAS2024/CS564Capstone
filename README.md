@@ -20,6 +20,7 @@ Team: Cyberpunks
         - Set up environment and scenario, key part of payload development and testing
     - Chinmai Anandh Chappa
         - Primary C2 and Implant development especially on communication protocol and the actual systems
+
 ## Setup
 We utilized two VMs, a Kali VM simulating an attacker and an Ubuntu VM that has the vulnerable version of Exim installed (specifically 4.89).  You will need to download the two VMs at this link (https://drive.google.com/drive/folders/18G88wcxVgnZYK8T934evU3yk4ygBlA1P?usp=drive_link)
 
@@ -56,6 +57,44 @@ Messages are transferred via a flask app interface and endpoints.
 
 AES is used to encrypt the commands.
 
+## APIs Supported by C2 and How Implant Interacts with Them
+
+The C2 Server provides several APIs to facilitate communication and coordination with the implant. Below is a detailed description of each API and how the implant interacts with it:
+
+1. **`/get_key_params` (GET)**  
+    - **C2 Functionality:** Provides the Diffie-Hellman parameters to the implant for deriving the session key.  
+    - **Implant Interaction:** The implant sends a GET request to this endpoint to retrieve the parameters. These are used to generate the implant's private and public keys for the key exchange process.
+
+2. **`/xchg_secrets` (POST)**  
+    - **C2 Functionality:** Accepts the implant's public key, derives the shared session key, and returns the server's public key.  
+    - **Implant Interaction:** The implant sends its public key to this endpoint. Upon receiving the server's public key in response, the implant derives the shared session key using the Diffie-Hellman Key Exchange algorithm. This session key is then used for encrypting and decrypting all subsequent communications.
+
+3. **`/upload` (POST)**  
+    - **C2 Functionality:** Receives encrypted data from the implant, decrypts it, and saves the exfiltrated file on the attacker's machine in the `receivedFiles` directory.  
+    - **Implant Interaction:** The implant encrypts the exfiltrated file data using the session key and sends it to this endpoint. The data is structured in JSON format, including the file name, size, and the encrypted content.
+
+4. **`/command` (GET)**  
+    - **C2 Functionality:** Sends encrypted commands to the implant. Commands are read from a file (`command.txt` by default) and cleared after being sent.  
+    - **Implant Interaction:** The implant polls this endpoint periodically to fetch commands. Upon receiving a command, the implant decrypts it using the session key.  
+      - If the command is a standard shell command, the implant executes it and encrypts the output before sending it back to the C2 Server via the `/log` endpoint.  
+      - If the command instructs the implant to exfiltrate a file, the implant retrieves the file, encrypts its content, and uploads it to the `/upload` endpoint.  
+      - If the command is to self-destruct, the implant securely deletes its files and logs before terminating itself.
+
+5. **`/log` (POST)**  
+    - **C2 Functionality:** Receives encrypted logs from the implant, decrypts them, and displays them on the attacker's console. Logs include success and failure cases, such as the output of commands, errors encountered while fetching files, or issues processing responses from the C2 Server.  
+    - **Implant Interaction:** The implant uses this endpoint to send logs back to the C2 Server. All logs are encrypted using the session key before transmission.
+
+6. **`/utility` (GET)**  
+    - **C2 Functionality:** Serves additional files (e.g., implants or utilities) to the implant.  
+    - **Implant Interaction:** The implant can request additional files or utilities from this endpoint. These files are downloaded and used as needed, such as for updates or additional functionality.
+
+7. **`/key` (GET)**  
+    - **C2 Functionality:** Legacy endpoint for serving a static key file. Retained for backup purposes.  
+    - **Implant Interaction:** This endpoint is not actively used by the implant in the current implementation but is retained for legacy purposes.
+
+8. **`/first` (GET)**  
+    - **C2 Functionality:** Ensures only the first implant process continues by coordinating multiple running processes.  
+    - **Implant Interaction:** The implant queries this endpoint to ensure it is the only active implant process running on the target machine. If the response indicates otherwise, the implant terminates itself to avoid redundancy.
+
 ## Video showing presentation and demo
 https://drive.google.com/file/d/1EybAim14q4jeGVMSYxL9eFav7jITW0RW/view?usp=sharing
-
