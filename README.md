@@ -21,8 +21,11 @@ Team: Cyberpunks
     - Chinmai Anandh Chappa
         - Primary C2 and Implant development especially on communication protocol and the actual systems
 ## Setup
-We utilized two VMs, a Kali VM simulating an attacker and an Ubuntu VM that has the vulnerable version of Exim installed (specifically 4.89).  You will need to download the two VMs at this (link)  ##Insert google drive link here TODO:
+We utilized two VMs, a Kali VM simulating an attacker and an Ubuntu VM that has the vulnerable version of Exim installed (specifically 4.89).  You will need to download the two VMs at this link (https://drive.google.com/drive/folders/18G88wcxVgnZYK8T934evU3yk4ygBlA1P?usp=drive_link)
 
+Note: as of this commit, the VMs are still uploading, and will be for a while. Check back soon for updates.
+
+    - Log into both VMs, the user and pass for the Kali VM is kali, and for the exploit VM is exploit.
     - To test the C2 and Implant, Exim needs to be started on the Ubuntu VM.
         - cd into exim4.89
         - sudo /usr/exim/bin/exim -bd -d-receive
@@ -54,5 +57,5 @@ Messages are transferred via a flask app interface and endpoints.
 AES is used to encrypt the commands.
 
 ## Video showing presentation and demo
-TODO: add link here []()
+https://drive.google.com/file/d/1EybAim14q4jeGVMSYxL9eFav7jITW0RW/view?usp=sharing
 
