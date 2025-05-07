@@ -25,7 +25,7 @@ We utilized two VMs, a Kali VM simulating an attacker and an Ubuntu VM that has 
 
     - To test the C2 and Implant, Exim needs to be started on the Ubuntu VM.
         - cd into exim4.89
-        - sudo -H -u exim /usr/exim/bin/exim -bd -d-receiv
+        - sudo /usr/exim/bin/exim -bd -d-receive
     - On the Kali VM:
         - run the server (found at /Desktop/CVE-2019-10149/C2Server)
         - run the payload files (found on /Desktop), curl_call_to_place_file.py and exploitnew.
