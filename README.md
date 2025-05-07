@@ -25,7 +25,24 @@ We utilized two VMs, a Kali VM simulating an attacker and an Ubuntu VM that has 
 
     - To test the C2 and Implant, Exim needs to be started on the Ubuntu VM.
     - TODO: Add steps to run exploit and C2/Implant on systems
-    
+
+## C2 Security
+Commands are listed as standard Exim commands to try and hide traffic from the server admin. The idea behind this is to mask the C2 as just another user communicating with the Exim server.
+
+Diffe-Hellman is used to have session keys to encrypt communication between the C2 and Implant.
+
+## Implant Security
+Diffe-Hellman Key Exchange is used for the same purpose as in the C2.
+
+On disconnect from C2 or via command, implant will destroy itself and its related files on the vulnerable machine.
+
+Implant hides exim server logs to not draw attention to itself from server admins.
+
+## Exfiltration Security
+Messages are transferred via a flask app interface and endpoints.
+
+AES is used to encrypt the commands.
+
 ## Video showing presentation and demo
 TODO: add link here []()
 
