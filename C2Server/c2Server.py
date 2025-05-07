@@ -133,7 +133,7 @@ def get_key_params():
 
 """
    POST endpoint
-   We ensure that the implant and the C2 share the same key for the .
+   We ensure that the implant and the C2 share the same key for the session.
 """
 @app.route("/xchg_secrets", methods=["POST"])
 def xchg_secrets():
