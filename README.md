@@ -9,7 +9,7 @@ For this project, we targeted a vulnerable Exim system. Exim is a mail transfer 
 
 We specifically utilized [CVE-2019-10149](https://nvd.nist.gov/vuln/detail/cve-2019-10149).
     
-We also utilized a PoC (Proof of Concept) exploit that we adapted to send payloads on the vulnerable machine. This PoC code is located within the exploit folder.
+We also utilized a PoC (Proof of Concept) exploit that we adapted to send payloads on the vulnerable machine. This PoC code is located within the base exploit code folder.
 
 ## Team and Responsibilities
 Team: Cyberpunks
