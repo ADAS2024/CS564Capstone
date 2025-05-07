@@ -45,7 +45,7 @@ def do_everything(data):
     obfuscated_data = obfuscate(encrypted_data)
     return obfuscated_data
 
-# function that does AES decryption and then deobfuscation
+# function that does deobfuscation and then AES decryption
 def undo_everything(data):
     deobfuscated_data = deobfuscate(data)
     decrypted_data = aes_decrypt(deobfuscated_data, KEY)
